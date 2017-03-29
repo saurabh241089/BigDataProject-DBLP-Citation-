@@ -1,0 +1,96 @@
+create table mpRedOp(PI INT, PJ INT)
+row format delimited
+fields terminated by '\t';
+
+load data local inpath '/home/administrator/Downloads/mapRedOutput' 
+into table mpRedOp;
+
+create table IncOnly(Incoming INT)
+row format delimited
+fields terminated by '\t';
+
+create table Incoming(Node INT, Incoming INT)
+row format delimited
+fields terminated by '\t';
+
+insert overwrite table IncOnly
+select PI from mpRedOp where PI IN(select PJ from mpRedOp);
+
+insert overwrite table Incoming
+select inc.Incoming, mp.PI from IncOnly inc, mpRedOp mp where inc.Incoming=mp.PJ group by inc.Incoming, mp.PI;
+
+
+insert overwrite table Incoming
+select mp.PI, inc.Incoming from mpRedOp mp left outer join Incoming inc on inc.Node=mp.PI group by mp.PI, inc.Incoming;
+
+
+create table Outgoing(PI INT, Cnt INT, PR DOUBLE)
+row format delimited
+fields terminated by '\t';
+
+
+insert overwrite table Outgoing
+select PI, count(PJ), 1/564705 from mpRedOp group by PI;
+
+create table PR_Rank(PI INT, Inc INT, Outg INT, PR DOUBLE)
+row format delimited
+fields terminated by '\t';
+
+insert overwrite table PR_Rank
+select inc.Node, inc.Incoming, outg.Cnt, 1/564705 from Incoming inc left outer join Outgoing outg on inc.Incoming=outg.PI;
+
+create table PR_Rank_Iter(PI INT, Inc INT, Outg INT, PR DOUBLE)
+row format delimited
+fields terminated by '\t';
+
+create table PR_Iter(PI INT, PR DOUBLE)
+row format delimited
+fields terminated by '\t';
+
+
+/********************************** Iterations 1-10 ****************************************/
+ 
+insert overwrite table PR_Rank_Iter
+select PI, Inc, Outg, 0.85*(PR/Outg) from PR_Rank where Inc IS NOT NULL;
+
+/*insert values who has no incoming links */
+insert into table PR_Rank_Iter
+select PI, Inc, Outg, (0.15/564705) from PR_Rank where Inc IS NULL;
+
+insert overwrite table PR_Iter
+select PI, ((0.15/564705)+sum(PR)) from PR_Rank_Iter where Inc IS NOT NULL group by PI;
+
+insert into table PR_Iter
+select PI, sum(PR) from PR_Rank_Iter where Inc IS NULL group by PI;
+
+insert overwrite table PR_Rank_Iter
+select prr.PI, prr.Inc, prr.Outg, prit.PR from PR_Rank prr left outer join PR_Iter prit on prr.Inc=prit.PI where prr.Inc IS NOT NULL order by prr.PI;
+
+insert overwrite table PR_Rank
+select prr.PI, prr.Inc, prr.Outg, (0.15/564705) from PR_Rank prr left outer join PR_Iter prit on prr.Inc=prit.PI where prr.Inc IS NULL order by prr.PI;
+
+insert into table PR_Rank
+select PI, Inc, Outg, PR from PR_Rank_Iter;
+
+/******************************************************************************************************************************************************/
+
+create table Final_Result(PI INT, Cnt INT, PR DOUBLE)
+row format delimited
+fields terminated by '\t';
+
+insert overwrite table Final_Result
+select outg.PI, outg.Cnt, prit.PR from Outgoing outg, PR_Iter prit where outg.PI=prit.PI order by outg.PI; 
+
+insert overwrite local directory '/home/administrator/Downloads/result.txt'
+row format delimited
+fields terminated by '\t'
+select PI, Cnt, PR from Final_Result order by PR DESC limit 10;
+
+
+
+
+
+ 
+
+
+

@@ -1,0 +1,10 @@
+A Method for Obtaining Digital Signatures and Public-Key Cryptosystems.	2	9.302950091900199E-4
+A Relational Model of Data for Large Shared Data Banks.	1	6.64118821440899E-4
+A computer system for inference execution and data retrieval.	3	6.09258387813341E-4
+Programming semantics for multiprogrammed computations.	4	5.833221231839816E-4
+The Complexity of Theorem-Proving Procedures	3	5.441968080494861E-4
+Secure Communications Over Insecure Channels.	1	4.51709355679377E-4
+Riemann's Hypothesis and Tests for Primality	1	4.1880198922779175E-4
+Database Abstractions: Aggregation.	2	3.7187579934870835E-4
+Illumination for Computer Generated Pictures.	2	3.394409176919113E-4
+A Characterization of Ten Hidden-Surface Algorithms.	4	3.2777223986392066E-4
